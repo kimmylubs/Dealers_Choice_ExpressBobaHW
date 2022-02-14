@@ -1,20 +1,36 @@
 const express = require("express");
-const {
-  syncAndSeed,
-  models: { Shop, Owner },
-} = require("./db");
+const { syncAndSeed, models: { Shop, Owner }} = require("./db");
 const app = express();
 
 app.use(require('method-override')('_method'));
+app.use(express.urlencoded({ extended: false }));
+
+app.put('/shop/:id', async(req, res, next) => {
+    try{
+        const shop = await Shop.findByPk(req.params.id);
+        await shop.update(req.body);
+        res.redirect('/');
+    }
+    catch(e){
+        console.log(e)
+        next(e);
+    }
+});
 
 app.get("/", async (req, res, next) => {
   try {
     const [shops, owners] = await Promise.all([
       Shop.findAll({
         include: [Owner],
+                order: [
+            ['name']
+        ]
       }),
       Owner.findAll({
         include: [Shop],
+        order: [
+            ['name']
+        ]
       }),
     ]);
     const html = 
@@ -34,7 +50,7 @@ app.get("/", async (req, res, next) => {
         ${shops.map((shop) =>` 
         <li> ${shop.name} 
         <form method='POST' action='/shop/${shop.id}?_method=PUT'> <select name='ownerId'> 
-        <option>-- not managed --</option> 
+        <option value=''>-- not managed --</option> 
         ${owners.map(owner => `<option value='${owner.id}' ${ owner.id === shop.ownerId ? 'selected="selected"':''}> ${owner.name} </option>`).join('')}
         </select> <button> Save </button> </form>
         </li>`).join('')}
@@ -44,6 +60,7 @@ app.get("/", async (req, res, next) => {
     </html>`;
     res.send(html);
   } catch (e) {
+    console.log(e);
     next(e);
   }
 });
