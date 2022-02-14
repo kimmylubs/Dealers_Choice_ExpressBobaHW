@@ -1,73 +1,63 @@
 const express = require("express");
-const bobaData = require("./bobaData");
-
+const {
+  syncAndSeed,
+  models: { Shop, Owner },
+} = require("./db");
 const app = express();
 
-app.use((req, res, next) => {
-    console.log(`${req.method} ${req.url}`);
-    next();
-})
+app.use(require('method-override')('_method'));
 
 app.get("/", async (req, res, next) => {
-  const stores = bobaData.list();
-  res.send(stores);
-});
-
-app.get("/home", async (req, res, next) => {
-    const stores = bobaData.list();
-    const html = `<!DOCTYPE html>
-    <html>
-        <body>
-            <header> <h1> Boba Shops! </h1> </header>
-            <div>
-            ${stores.map((store) =>  `<ul> <a href = "/home/${store.id}"> ${store.name} </a> </ul>`)
-            .join(' ')}
-            </div>
-            <br>
-            <div>
-            <a href = '/home/all'> ALL BOBA INFO  </a>
-            </div> 
-            <br>
-            <div>
-            <a href ='/'> Boba Shops Array Info </a>
-            </div>
-        </body>
+  try {
+    const [shops, owners] = await Promise.all([
+      Shop.findAll({
+        include: [Owner],
+      }),
+      Owner.findAll({
+        include: [Shop],
+      }),
+    ]);
+    const html = 
+    `<html>
+    <body> <div>
+    <h2> Owners </h2>
+    <ul>
+        ${owners.map((owner) => `
+        <li>${owner.name}
+        <ul> ${owner.shops.map( shop => `<li> ${shop.name}</li>`). join('')} </ul>
+        </li>`
+        ).join('')}
+    </ul>
+    </div> <div>
+    <h2> Boba Shops </h2>
+    <ul> 
+        ${shops.map((shop) =>` 
+        <li> ${shop.name} 
+        <form method='POST' action='/shop/${shop.id}?_method=PUT'> <select name='ownerId'> 
+        <option>-- not managed --</option> 
+        ${owners.map(owner => `<option value='${owner.id}' ${ owner.id === shop.ownerId ? 'selected="selected"':''}> ${owner.name} </option>`).join('')}
+        </select> <button> Save </button> </form>
+        </li>`).join('')}
+    </ul>
+    </div>
+    </body>
     </html>`;
     res.send(html);
-  });
-
-app.get("/home/all", async (req, res, next) => {
-    const stores = bobaData.list();
-    const html =` <!DOCTYPE html>
-    <html>
-        <body>
-            <header> 
-                ${stores.map((store) => 
-                    `<ul> <h3> Store Name: ${store.name} </h3> </ul>
-                    <ul>  Rating: ${store.stars} </ul>` )
-                    .join (' ')};
-            </header>
-        </body>
-    </html>`;
-    res.send(html);
+  } catch (e) {
+    next(e);
+  }
 });
 
-app.get("/home/:id", async (req, res, next) => {
-    const id = req.params.id;
-    const stores = bobaData.find(id);
-    const html = `<!DOCTYPE html>
-    <html>
-        <header> <h2> BOBA SHOP </h2> 
-        <h4>${stores.name} </h4></header>
-        <body>
-            <div>
-            ID#: ${stores.id}
-            <br>
-            STARS: ${stores.stars}
-            </div>
-        </body>
-    </html>`;
-    res.send(html);
-});
+const init = async () => {
+  try {
+    await syncAndSeed();
+    console.log("ready");
+  } catch (e) {
+    console.log(e);
+  }
+};
 
-app.listen(3000);
+init();
+
+const port = 3000;
+app.listen(port, () => console.log(`lstening on ${port}`));
