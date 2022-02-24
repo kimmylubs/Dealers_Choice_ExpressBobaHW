@@ -1,7 +1,7 @@
 {
   "name": "dealers_choice_2-11-2022_expressyelphw",
   "version": "1.0.0",
-  "description": "",
+  "description": "Dealers_Choice_2-11-2022_Express_HW",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -12,12 +12,21 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.26.0",
     "method-override": "^3.0.0",
-    "nodemon": "^2.0.15",
     "pg": "^8.7.3",
-    "sequelize": "^6.16.1"
+    "sequelize": "^6.16.2"
   },
   "devDependencies": {
-    "express": "^4.17.2"
-  }
+    "express": "^4.17.3",
+    "nodemon": "^2.0.15"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kimmylubs/Dealers_Choice_2-11-2022-ExpressBobaHW.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kimmylubs/Dealers_Choice_2-11-2022-ExpressBobaHW/issues"
+  },
+  "homepage": "https://github.com/kimmylubs/Dealers_Choice_2-11-2022-ExpressBobaHW#readme"
 }

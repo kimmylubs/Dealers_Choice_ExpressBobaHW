@@ -1,77 +1,34 @@
 const express = require("express");
-const { syncAndSeed, models: { Shop, Owner }} = require("./db");
 const app = express();
+const Sequelize = require('sequelize');
+const sequelize = new Sequelize(process.env.DATABASE_URL ||'postgres://localhost/boba_hw');
+const path = require('path');
 
-app.use(require('method-override')('_method'));
-app.use(express.urlencoded({ extended: false }));
-
-app.put('/shop/:id', async(req, res, next) => {
-    try{
-        const shop = await Shop.findByPk(req.params.id);
-        await shop.update(req.body);
-        res.redirect('/');
-    }
-    catch(e){
-        console.log(e)
-        next(e);
-    }
+const Shop = sequelize.define('shop', {
+  name: {
+    type: Sequelize.STRING,
+    unique: true,
+  },
 });
 
-app.get("/", async (req, res, next) => {
+app.use('/src', express.static(path.join(__dirname,'src')));
+
+app.get('/', (req, res, next) => res.sendFile(path.join(__dirname,'index.html')));
+
+app.get('/api/shops', async(req, res, next) => {
   try {
-    const [shops, owners] = await Promise.all([
-      Shop.findAll({
-        include: [Owner],
-                order: [
-            ['name']
-        ]
-      }),
-      Owner.findAll({
-        include: [Shop],
-        order: [
-            ['name']
-        ]
-      }),
-    ]);
-    const html = 
-    `<html>
-    <body> <div>
-    <h2> Owners </h2>
-    <ul>
-        ${owners.map((owner) => `
-        <li>${owner.name}
-        <ul> ${owner.shops.map( shop => `<li> ${shop.name}</li>`). join('')} </ul>
-        </li>`
-        ).join('')}
-    </ul>
-    </div> <div>
-    <h2> Boba Shops </h2>
-    <ul> 
-        ${shops.map((shop) =>` 
-        <li> ${shop.name} 
-        <form method='POST' action='/shop/${shop.id}?_method=PUT'> <select name='ownerId'> 
-        <option value=''>-- not managed --</option> 
-        ${owners.map(owner => `<option value='${owner.id}' ${ owner.id === shop.ownerId ? 'selected="selected"':''}> ${owner.name} </option>`).join('')}
-        </select> <button> Save </button> </form>
-        </li>`).join('')}
-    </ul>
-    </div>
-    </body>
-    </html>`;
-    res.send(html);
-  } catch (e) {
-    console.log(e);
+    res.send(await Shop.findAll());
+  }
+  catch(e){
     next(e);
   }
 });
 
 const init = async () => {
-  try {
-    await syncAndSeed();
-    console.log("ready");
-  } catch (e) {
-    console.log(e);
-  }
+    await sequelize.sync({ force: true })
+    const [jooy, truedan, gongcha, teazzi, tenren] = await Promise.all(
+      ['jooy', 'truedan', 'gongcha', 'teazzi', 'ten ren']
+    .map ( name => Shop.create({ name })));
 };
 
 init();
